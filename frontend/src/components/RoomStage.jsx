@@ -1,8 +1,16 @@
-export function RoomStage({ stress = 0, children }) {
+export function RoomStage({ stress = 0, tune, children }) {
   const intensity = Math.min(1, stress / 100);
 
+  const style = { "--stage-intensity": intensity };
+  if (tune) {
+    style["--suspect-width"] = `${tune.width}vw`;
+    style["--suspect-bottom"] = `${tune.bottom}%`;
+    style["--suspect-left"] = `${tune.left}%`;
+    style["--suspect-brightness"] = tune.brightness / 100;
+  }
+
   return (
-    <div className="room-stage" style={{ "--stage-intensity": intensity }}>
+    <div className="room-stage" style={style}>
       <img
         className="room-plate"
         src="/assets/environment/interrogation-room-plate.png"

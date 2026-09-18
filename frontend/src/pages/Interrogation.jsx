@@ -3,12 +3,17 @@ import { askQuestion } from "../api";
 import { RoomStage } from "../components/RoomStage";
 import { StressGauge } from "../components/StressGauge";
 import { Timer } from "../components/Timer";
-import { ChatLog } from "../components/ChatLog";
 import { EvidencePanel } from "../components/EvidencePanel";
 import { EvidenceFolder } from "../components/evidence/EvidenceFolder";
 import { ActionBar } from "../components/ActionBar";
+// Re-tuning the suspect's placement? Uncomment this import, the DEFAULT_TUNE
+// const, the `tune` state, and the two JSX lines marked TUNER below.
+// import { SuspectTuner } from "../components/SuspectTuner";
 
 const ROUND_SECONDS = 12 * 60;
+const MAX_PROMPTS = 25;
+
+// const DEFAULT_TUNE = { width: 23, bottom: 20, left: 50, brightness: 101 };
 
 export function Interrogation({ session, onStatusChange }) {
   const [entries, setEntries] = useState([]);
@@ -21,18 +26,11 @@ export function Interrogation({ session, onStatusChange }) {
   const [sending, setSending] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(ROUND_SECONDS);
   const [activeAction, setActiveAction] = useState("ask");
+  // const [tune, setTune] = useState(DEFAULT_TUNE);   // TUNER
   const inputRef = useRef(null);
 
-  const handleAction = (action) => {
-    setActiveAction(action);
-    if (action === "ask") {
-      inputRef.current?.focus();
-    }
-    if (action === "evidence") {
-      const firstUnlocked = evidenceFound[0];
-      if (firstUnlocked) setOpenEvidence(firstUnlocked);
-    }
-  };
+  const lastReply = [...entries].reverse().find((entry) => entry.role === "adrian");
+  const promptsLeft = Math.max(0, MAX_PROMPTS - entries.filter((e) => e.role === "player").length);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -40,6 +38,12 @@ export function Interrogation({ session, onStatusChange }) {
     }, 1000);
     return () => window.clearInterval(id);
   }, []);
+
+  const handleAction = (action) => {
+    setActiveAction(action);
+    if (action === "ask") inputRef.current?.focus();
+    if (action === "evidence" && evidenceFound[0]) setOpenEvidence(evidenceFound[0]);
+  };
 
   const handleSend = async () => {
     const trimmed = question.trim();
@@ -68,106 +72,137 @@ export function Interrogation({ session, onStatusChange }) {
   };
 
   return (
-    <main className="interrogation-shell">
-      <RoomStage stress={stress}>
-        <header className="stage-hud stage-hud-top">
-          <div className="stage-brand">
-            <span className="stage-brand-name">
-              PROMPT <span className="start-x">X</span>
-            </span>
-            <small>{session.session_id}</small>
-          </div>
-          <Timer secondsRemaining={secondsRemaining} />
-        </header>
+    <div className="interrogation-screen">
+      {/* TUNER: swap for <RoomStage stress={stress} tune={tune} /> when re-tuning */}
+      <RoomStage stress={stress} />
+      {/* TUNER: <SuspectTuner values={tune} onChange={setTune} /> */}
 
-        <footer className="stage-hud stage-hud-bottom">
-          <StressGauge stress={stress} />
-          <div className="milestone-readout">
-            MILESTONE {String(milestone).padStart(2, "0")}/05
-          </div>
-        </footer>
-      </RoomStage>
-
-      <ActionBar active={activeAction} onSelect={handleAction} disabled={sending} />
-
-      <div className="interrogation-body">
-        <div className="interrogation-main">
-          <ChatLog entries={entries} />
-
-          {activeAction === "accuse" && (
-            <section className="action-panel">
-              <p className="panel-title">// FORMAL ACCUSATION</p>
-              <p className="action-panel-body">
-                An accusation is final. State it as a question that names the contradiction
-                you have proven — Adrian will not break on an unsupported claim.
-              </p>
-              <p className="action-panel-note">
-                Milestones completed: {milestone}/5. All five are required before a
-                confession can be forced.
-              </p>
-              <button type="button" onClick={() => handleAction("ask")}>
-                RETURN TO QUESTIONING
-              </button>
-            </section>
-          )}
-
-          {activeAction === "end" && (
-            <section className="action-panel action-panel-warning">
-              <p className="panel-title">// END SESSION</p>
-              <p className="action-panel-body">
-                Ending closes the interrogation. Your progress is recorded as-is and
-                cannot be resumed.
-              </p>
-              <div className="action-panel-actions">
-                <button type="button" onClick={() => handleAction("ask")}>
-                  CANCEL
-                </button>
-                <button
-                  type="button"
-                  className="action-danger"
-                  onClick={() => onStatusChange({ ...session, status: "ENDED", stress })}
-                >
-                  CONFIRM END
-                </button>
-              </div>
-            </section>
-          )}
-
-          <section className="question-panel">
-            <label className="panel-title" htmlFor="question">
-              // ENTER_INTERROGATION
-            </label>
-            <textarea
-              id="question"
-              ref={inputRef}
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder="Type your question here..."
-              maxLength={500}
-              disabled={sending}
-            />
-            <div className="question-actions">
-              <span className="char-count">{question.length}/500</span>
-              <button type="button" onClick={handleSend} disabled={sending}>
-                {sending ? "SENDING..." : "SEND"}
-              </button>
-            </div>
-            {error && <p className="error-text">{error}</p>}
-          </section>
+      <header className="hud-top">
+        <div className="hud-brand">
+          <span className="hud-brand-name">
+            PROMPT<span className="start-x">X</span>
+          </span>
+          <small>INTERROGATION PROTOCOL v1.0.0</small>
         </div>
 
-        <EvidencePanel evidenceFound={evidenceFound} onSelect={setOpenEvidence} />
+        <div className="hud-stress">
+          <StressGauge stress={stress} />
+        </div>
+
+        <div className="hud-tagline">
+          TRUTH
+          <br />
+          LIES
+          <br />
+          IN YOUR PROMPT.
+        </div>
+      </header>
+
+      <section className="hud-panel hud-response">
+        <div className="panel-title">// SUSPECT RESPONSE</div>
+        <div className="hud-response-body">
+          {lastReply ? (
+            <p>{lastReply.text}</p>
+          ) : (
+            <p className="chat-empty">Awaiting your first question.</p>
+          )}
+          {sending && <p className="hud-thinking">...</p>}
+        </div>
+      </section>
+
+      <section className="hud-panel hud-input">
+        <label className="panel-title" htmlFor="question">
+          // ENTER_INTERROGATION
+        </label>
+        <textarea
+          id="question"
+          ref={inputRef}
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Type your question..."
+          maxLength={500}
+          disabled={sending}
+        />
+        <button type="button" className="hud-send" onClick={handleSend} disabled={sending}>
+          {sending ? "SENDING..." : "SEND"}
+        </button>
+        {error && <p className="error-text">{error}</p>}
+      </section>
+
+      <div className="hud-desk-sheet">
+        <ActionBar active={activeAction} onSelect={handleAction} disabled={sending} />
       </div>
+
+      {activeAction === "evidence" && (
+        <div className="hud-panel hud-evidence">
+          <EvidencePanel evidenceFound={evidenceFound} onSelect={setOpenEvidence} />
+        </div>
+      )}
+
+      {activeAction === "accuse" && (
+        <section className="hud-panel hud-action-panel">
+          <div className="panel-title">// FORMAL ACCUSATION</div>
+          <p className="action-panel-body">
+            An accusation is final. Name the contradiction you have proven — Adrian will
+            not break on an unsupported claim.
+          </p>
+          <p className="action-panel-note">Milestones completed: {milestone}/5.</p>
+          <button type="button" onClick={() => handleAction("ask")}>
+            RETURN TO QUESTIONING
+          </button>
+        </section>
+      )}
+
+      {activeAction === "end" && (
+        <section className="hud-panel hud-action-panel action-panel-warning">
+          <div className="panel-title">// END SESSION</div>
+          <p className="action-panel-body">
+            Ending closes the interrogation. Progress is recorded as-is.
+          </p>
+          <div className="action-panel-actions">
+            <button type="button" onClick={() => handleAction("ask")}>
+              CANCEL
+            </button>
+            <button
+              type="button"
+              className="action-danger"
+              onClick={() => onStatusChange({ ...session, status: "ENDED", stress })}
+            >
+              CONFIRM END
+            </button>
+          </div>
+        </section>
+      )}
+
+      <footer className="hud-bottom">
+        <div className="hud-footer-brand">
+          <strong>PROMPT X</strong>
+          <small>— TRUTH ALWAYS SURFACES</small>
+        </div>
+        <div className="hud-footer-stats">
+          <span>
+            TIME REMAINING <Timer secondsRemaining={secondsRemaining} inline />
+          </span>
+          <i className="hud-divider" />
+          <span>
+            PROMPTS LEFT <b>{promptsLeft}</b>
+          </span>
+          <i className="hud-divider" />
+          <span>
+            MILESTONE <b>{String(milestone).padStart(2, "0")}/05</b>
+          </span>
+        </div>
+      </footer>
 
       {openEvidence && (
         <EvidenceFolder evidenceId={openEvidence} onClose={() => setOpenEvidence(null)} />
       )}
-    </main>
+    </div>
   );
 }
