@@ -6,6 +6,7 @@ import { Timer } from "../components/Timer";
 import { ChatLog } from "../components/ChatLog";
 import { EvidencePanel } from "../components/EvidencePanel";
 import { EvidenceFolder } from "../components/evidence/EvidenceFolder";
+import { ActionBar } from "../components/ActionBar";
 
 const ROUND_SECONDS = 12 * 60;
 
@@ -19,7 +20,19 @@ export function Interrogation({ session, onStatusChange }) {
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(ROUND_SECONDS);
+  const [activeAction, setActiveAction] = useState("ask");
   const inputRef = useRef(null);
+
+  const handleAction = (action) => {
+    setActiveAction(action);
+    if (action === "ask") {
+      inputRef.current?.focus();
+    }
+    if (action === "evidence") {
+      const firstUnlocked = evidenceFound[0];
+      if (firstUnlocked) setOpenEvidence(firstUnlocked);
+    }
+  };
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -59,7 +72,9 @@ export function Interrogation({ session, onStatusChange }) {
       <RoomStage stress={stress}>
         <header className="stage-hud stage-hud-top">
           <div className="stage-brand">
-            PROMPT <span className="start-x">X</span>
+            <span className="stage-brand-name">
+              PROMPT <span className="start-x">X</span>
+            </span>
             <small>{session.session_id}</small>
           </div>
           <Timer secondsRemaining={secondsRemaining} />
@@ -73,9 +88,50 @@ export function Interrogation({ session, onStatusChange }) {
         </footer>
       </RoomStage>
 
+      <ActionBar active={activeAction} onSelect={handleAction} disabled={sending} />
+
       <div className="interrogation-body">
         <div className="interrogation-main">
           <ChatLog entries={entries} />
+
+          {activeAction === "accuse" && (
+            <section className="action-panel">
+              <p className="panel-title">// FORMAL ACCUSATION</p>
+              <p className="action-panel-body">
+                An accusation is final. State it as a question that names the contradiction
+                you have proven — Adrian will not break on an unsupported claim.
+              </p>
+              <p className="action-panel-note">
+                Milestones completed: {milestone}/5. All five are required before a
+                confession can be forced.
+              </p>
+              <button type="button" onClick={() => handleAction("ask")}>
+                RETURN TO QUESTIONING
+              </button>
+            </section>
+          )}
+
+          {activeAction === "end" && (
+            <section className="action-panel action-panel-warning">
+              <p className="panel-title">// END SESSION</p>
+              <p className="action-panel-body">
+                Ending closes the interrogation. Your progress is recorded as-is and
+                cannot be resumed.
+              </p>
+              <div className="action-panel-actions">
+                <button type="button" onClick={() => handleAction("ask")}>
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  className="action-danger"
+                  onClick={() => onStatusChange({ ...session, status: "ENDED", stress })}
+                >
+                  CONFIRM END
+                </button>
+              </div>
+            </section>
+          )}
 
           <section className="question-panel">
             <label className="panel-title" htmlFor="question">

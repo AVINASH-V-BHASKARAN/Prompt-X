@@ -10,6 +10,7 @@ const CASE_SUMMARY = [
 
 export function Confession({ session }) {
   const [revealed, setRevealed] = useState(false);
+  const confessed = session.status === "CONFESSION";
 
   useEffect(() => {
     const id = window.setTimeout(() => setRevealed(true), 1400);
@@ -18,22 +19,29 @@ export function Confession({ session }) {
 
   return (
     <main className="confession-screen">
-      <h1 className="confession-headline">CASE CLOSED</h1>
-      <p className="confession-sub">ADRIAN VALE HAS CONFESSED</p>
+      <h1 className="confession-headline">{confessed ? "CASE CLOSED" : "CASE UNRESOLVED"}</h1>
+      <p className="confession-sub">
+        {confessed ? "ADRIAN VALE HAS CONFESSED" : "ADRIAN VALE WALKS"}
+      </p>
 
-      {session.response && <blockquote className="confession-quote">{session.response}</blockquote>}
+      {confessed && session.response && (
+        <blockquote className="confession-quote">{session.response}</blockquote>
+      )}
 
-      <dl className={`confession-summary${revealed ? " confession-summary-visible" : ""}`}>
-        {CASE_SUMMARY.map(([label, value]) => (
-          <div key={label} className="confession-row">
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
+      {confessed && (
+        <dl className={`confession-summary${revealed ? " confession-summary-visible" : ""}`}>
+          {CASE_SUMMARY.map(([label, value]) => (
+            <div key={label} className="confession-row">
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
 
       <p className="confession-meta">
         SESSION {session.session_id} — FINAL STRESS {session.stress}%
+        {!confessed && " — NO CONFESSION RECORDED"}
       </p>
     </main>
   );

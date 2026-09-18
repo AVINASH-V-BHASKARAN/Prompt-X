@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { EVIDENCE_CONTENT, EVIDENCE_PHOTOS } from "../../data/evidenceContent";
+import { WitnessStatementDoc } from "./WitnessStatementDoc";
+import { FingerprintDoc } from "./FingerprintDoc";
 
 function RecordDoc({ content }) {
   return (
@@ -24,6 +26,8 @@ function PhotoDoc({ photo }) {
         <img src={photo.src} alt={photo.caption} />
         <figcaption>{photo.caption}</figcaption>
       </figure>
+      {photo.statement && <WitnessStatementDoc statement={photo.statement} />}
+      {photo.forensics && <FingerprintDoc forensics={photo.forensics} />}
     </div>
   );
 }

@@ -12,7 +12,7 @@ export default function App() {
     return <Start onStarted={setSession} />;
   }
 
-  if (session.status === "CONFESSION") {
+  if (session.status === "CONFESSION" || session.status === "ENDED") {
     return <Confession session={session} />;
   }
 

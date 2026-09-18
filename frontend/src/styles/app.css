@@ -24,67 +24,64 @@ textarea {
 .room-stage {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  /* Matches interrogation-room-plate.png (1672x941) so the plate fills the
+     stage exactly — no crop, no letterbox. */
+  aspect-ratio: 1672 / 941;
   overflow: hidden;
   background: var(--px-black);
 }
 
-.room-plate,
-.room-suspect {
+/* contain, not cover: the plate is the room's true framing, so it must never be
+   cropped. The stage matches the plate's own 1672x941 aspect ratio. */
+.room-plate {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
-/* The suspect sits BEHIND the desk: he is anchored so his lower body runs past
-   the desk's front edge (~58% of the plate), and .room-desk-occluder paints that
-   desk region back over him. Without this he reads as floating on the wall. */
+/* The suspect is seated AT the desk. Values were tuned visually against the
+   room plate; .room-desk-occluder repaints the desk over his lower body. */
 .room-suspect {
-  width: 30%;
+  position: absolute;
+  width: 34%;
   height: auto;
-  left: 50%;
-  top: 16%;
-  bottom: auto;
+  left: 47%;
+  top: auto;
+  bottom: 25%;
   transform: translateX(-50%);
   object-fit: contain;
-  /* The source portrait has no alpha channel, so it is blended into the wall
-     rather than composited: multiply burns its dark surround into the plate,
-     and the soft mask erases the remaining rectangular edges. */
-  mix-blend-mode: multiply;
-  filter: brightness(1.34) contrast(1.05) saturate(0.92);
-  -webkit-mask-image: radial-gradient(ellipse 54% 62% at 50% 40%, #000 44%, rgb(0 0 0 / 30%) 72%, transparent 88%);
-  mask-image: radial-gradient(ellipse 54% 62% at 50% 40%, #000 44%, rgb(0 0 0 / 30%) 72%, transparent 88%);
+  filter: brightness(1.01) contrast(1.1) saturate(0.85);
 }
 
-/* Re-paints the desk half of the room plate on top of the suspect, so the desk
-   edge cuts him off instead of him hovering above it. */
+/* Repaints the desk portion of the room plate on top of the suspect, so the
+   desk's far edge cuts across his body and seats him behind it. */
 .room-desk-occluder {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image: url("/assets/environment/interrogation-room-plate.png");
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0 56%, #000 60% 100%);
-  mask-image: linear-gradient(to bottom, transparent 0 56%, #000 60% 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0 74%, #000 76% 100%);
+  mask-image: linear-gradient(to bottom, transparent 0 74%, #000 76% 100%);
 }
 
 /* Warm practical light pooling on the suspect, sold as lamp falloff. */
 .room-suspect-glow {
   position: absolute;
   left: 50%;
-  top: 14%;
-  width: 38%;
-  aspect-ratio: 1 / 1.05;
+  top: 12%;
+  width: 52%;
+  aspect-ratio: 1 / 0.9;
   transform: translateX(-50%);
   pointer-events: none;
   background: radial-gradient(
-    ellipse 50% 46% at 50% 40%,
-    rgb(201 138 69 / 20%),
-    rgb(201 138 69 / 6%) 55%,
-    transparent 78%
+    ellipse 48% 50% at 50% 42%,
+    rgb(201 138 69 / 16%),
+    rgb(201 138 69 / 5%) 58%,
+    transparent 80%
   );
   mix-blend-mode: screen;
 }
@@ -147,14 +144,18 @@ textarea {
 
 .stress-gauge {
   display: grid;
-  gap: 0.25rem;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.6rem;
+  width: 100%;
 }
 
 .stress-gauge-head {
+  grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  gap: 0.75rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
   color: var(--px-terminal-dim);
 }
 
@@ -163,9 +164,9 @@ textarea {
 }
 
 .stress-track {
-  height: 12px;
+  height: 10px;
   border: 1px solid var(--px-hairline);
-  background: var(--px-surface);
+  background: rgb(10 9 6 / 70%);
   overflow: hidden;
 }
 
@@ -179,9 +180,11 @@ textarea {
 }
 
 .stress-value {
-  font-size: 0.7rem;
-  color: var(--px-terminal-dim);
-  text-align: right;
+  font-size: 0.66rem;
+  color: var(--px-terminal);
+  line-height: 1;
+  align-self: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .timer {
@@ -378,37 +381,47 @@ textarea {
 
 .stage-hud {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(to bottom, rgb(10 9 6 / 78%), transparent);
+  gap: 1.5rem;
+  padding: 0.85rem 1.1rem;
+  background: linear-gradient(to bottom, rgb(10 9 6 / 88%), transparent);
 }
 
 .stage-hud-bottom {
-  background: linear-gradient(to top, rgb(10 9 6 / 85%), transparent);
+  align-items: flex-end;
+  background: linear-gradient(to top, rgb(10 9 6 / 92%) 45%, transparent);
 }
 
 .stage-brand {
-  letter-spacing: 0.18em;
   display: grid;
+  gap: 0.15rem;
+  line-height: 1.1;
+}
+
+.stage-brand-name {
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  font-size: 0.95rem;
 }
 
 .stage-brand small {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   color: var(--px-terminal-dim);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
 }
 
 .stage-hud-bottom .stress-gauge {
-  flex: 1;
-  max-width: 320px;
+  width: 280px;
+  flex: 0 0 auto;
 }
 
 .milestone-readout {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   color: var(--px-terminal-dim);
+  white-space: nowrap;
+  padding-bottom: 0.1rem;
 }
 
 .interrogation-body {
@@ -483,6 +496,110 @@ textarea {
   .interrogation-body {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* --- Action bar --- */
+
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-top: 1px solid var(--px-hairline);
+  border-bottom: 1px solid var(--px-hairline);
+  padding: 0.5rem 0;
+}
+
+.action-button {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 8rem;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--px-terminal-dim);
+  padding: 0.45rem 0.7rem;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.action-button:hover:not(:disabled) {
+  color: var(--px-terminal);
+  border-color: var(--px-hairline);
+}
+
+.action-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-active {
+  color: var(--px-terminal);
+  border-color: var(--px-terminal);
+  background: rgb(168 213 154 / 8%);
+}
+
+.action-caret {
+  width: 0.6rem;
+  color: var(--px-warning);
+}
+
+.action-panel {
+  border: 1px solid var(--px-hairline);
+  background: rgb(33 28 20 / 82%);
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.action-panel-warning {
+  border-color: var(--px-warning);
+}
+
+.action-panel-body {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--px-paper);
+}
+
+.action-panel-note {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--px-terminal-dim);
+}
+
+.action-panel button {
+  background: none;
+  border: 1px solid var(--px-hairline);
+  color: var(--px-terminal);
+  padding: 0.45rem 0.9rem;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.action-panel button:hover {
+  background: rgb(168 213 154 / 10%);
+}
+
+.action-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.action-danger {
+  border-color: var(--px-warning) !important;
+  color: var(--px-warning) !important;
+}
+
+.action-danger:hover {
+  background: rgb(159 48 41 / 14%) !important;
 }
 
 /* --- Evidence documents --- */
@@ -604,6 +721,107 @@ textarea {
   padding: 0.55rem;
   letter-spacing: 0.1em;
   cursor: pointer;
+}
+
+.doc-subhead {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: #6b5c41;
+  border-bottom: 1px solid #a8956d;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.6rem;
+}
+
+.doc-statement-block,
+.doc-forensics {
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed #a8956d;
+}
+
+.doc-witness {
+  margin: 0 0 0.5rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  color: #4a3f2d;
+  font-weight: 600;
+}
+
+.doc-statement {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.doc-signature {
+  height: 34px;
+  margin: 0.8rem 0 0.2rem;
+  background:
+    linear-gradient(
+      100deg,
+      transparent 0 8%,
+      #2a231a 8% 9%,
+      transparent 9% 14%,
+      #2a231a 14% 15%,
+      transparent 15% 30%,
+      #2a231a 30% 31%,
+      transparent 31% 100%
+    ),
+    radial-gradient(ellipse 34% 40% at 22% 60%, transparent 46%, #2a231a 47%, transparent 52%);
+  opacity: 0.7;
+}
+
+.doc-forensics-grid {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.doc-fingerprint {
+  width: 100%;
+  height: auto;
+}
+
+.doc-forensics-rows {
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.doc-forensics-rows > div {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.5rem;
+  border-bottom: 1px dotted #a8956d;
+  padding-bottom: 0.25rem;
+}
+
+.doc-forensics-rows dt {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: #6b5c41;
+}
+
+.doc-forensics-rows dd {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.doc-forensics-match {
+  color: var(--px-warning);
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .doc-forensics-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .doc-fingerprint {
+    width: 90px;
+  }
 }
 
 /* --- Confession screen --- */
