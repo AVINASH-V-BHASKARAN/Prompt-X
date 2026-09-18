@@ -30,6 +30,7 @@ export function Interrogation({ session, onStatusChange }) {
   const [sending, setSending] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(ROUND_SECONDS);
   const [activeAction, setActiveAction] = useState("ask");
+  const [showEvidenceList, setShowEvidenceList] = useState(false);
   // const [tune, setTune] = useState(DEFAULT_TUNE);   // TUNER
   // EVIDENCE TUNER: const [evidenceTune, setEvidenceTune] = useState({
   //   left: 7, bottom: 0, folderWidth: 17, folderHeight: 24, rotate: -7,
@@ -160,7 +161,7 @@ export function Interrogation({ session, onStatusChange }) {
       <DeskEvidenceStack
         evidenceFound={evidenceFound}
         onOpen={setOpenEvidence}
-        onOpenAll={() => handleAction("evidence")}
+        onOpenAll={() => setShowEvidenceList((open) => !open)}
       />
       {/* EVIDENCE TUNER: <EvidenceTuner values={evidenceTune} onChange={setEvidenceTune} /> */}
 
@@ -168,7 +169,7 @@ export function Interrogation({ session, onStatusChange }) {
         <ActionBar active={activeAction} onSelect={handleAction} disabled={sending} />
       </div>
 
-      {activeAction === "evidence" && (
+      {showEvidenceList && (
         <div className="hud-panel hud-evidence">
           <EvidencePanel evidenceFound={evidenceFound} onSelect={setOpenEvidence} />
         </div>

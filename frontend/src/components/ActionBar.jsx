@@ -1,6 +1,6 @@
+// Evidence is opened by clicking the case folder on the desk, not from here.
 const ACTIONS = [
   { id: "ask", label: "ASK QUESTION" },
-  { id: "evidence", label: "SHOW EVIDENCE" },
   { id: "accuse", label: "ACCUSE" },
   { id: "end", label: "END" },
 ];
