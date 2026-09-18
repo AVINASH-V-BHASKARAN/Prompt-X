@@ -508,29 +508,36 @@ textarea {
 
 /* Action menu, rendered as a paper sheet lying on the desk */
 
+/* Sits low on the desk surface so it never covers the suspect. The scrim is a
+   soft vertical fade rather than a hard box, to read as light on the desk. */
 .hud-desk-sheet {
   position: absolute;
-  bottom: 5.5rem;
+  bottom: 3.75rem;
   left: 50%;
   transform: translateX(-50%);
-  width: min(42vw, 420px);
+  width: min(34vw, 340px);
   z-index: 3;
-  /* Dark scrim so the menu stays legible over the busy desk texture. */
-  background: rgb(10 9 6 / 82%);
-  border: 1px solid var(--px-terminal-dim);
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.9rem;
+  background: linear-gradient(
+    to bottom,
+    rgb(10 9 6 / 0%),
+    rgb(10 9 6 / 72%) 22%,
+    rgb(10 9 6 / 78%)
+  );
 }
 
 /* Evidence / accuse / end panels sit above the sheet, centered */
 
+/* Anchored bottom-right so they clear both the suspect and the action menu. */
 .hud-evidence,
 .hud-action-panel {
-  bottom: 5.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(44vw, 440px);
+  bottom: 3.75rem;
+  right: 1.5rem;
+  width: min(26vw, 300px);
   display: grid;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  max-height: 46vh;
+  overflow-y: auto;
 }
 
 .hud-evidence .evidence-panel {
@@ -620,6 +627,60 @@ textarea {
   }
 }
 
+/* --- Evidence stack prop on the desk --- */
+
+.desk-evidence {
+  position: absolute;
+  bottom: 4.5rem;
+  left: 3vw;
+  width: min(22vw, 260px);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.desk-evidence:hover:not(:disabled),
+.desk-evidence:focus-visible:not(:disabled) {
+  transform: translateY(-4px) scale(1.02);
+  filter: brightness(1.18) drop-shadow(0 0 14px rgb(201 138 69 / 45%));
+  outline: none;
+}
+
+.desk-evidence:disabled {
+  cursor: default;
+  filter: brightness(0.5) saturate(0.4);
+}
+
+.desk-evidence-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* The source render has an opaque black backdrop. A radial mask feathers the
+     square edge away, and the desk beneath is dark enough that the remaining
+     black reads as shadow under the folders. */
+  -webkit-mask-image: radial-gradient(ellipse 64% 62% at 50% 52%, #000 52%, transparent 88%);
+  mask-image: radial-gradient(ellipse 64% 62% at 50% 52%, #000 52%, transparent 88%);
+}
+
+.desk-evidence-count {
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--px-terminal);
+  text-shadow: 0 1px 4px rgb(0 0 0 / 95%);
+}
+
+@media (max-width: 900px) {
+  .desk-evidence {
+    display: none;
+  }
+}
+
 /* --- Temporary suspect tuner --- */
 
 .tuner {
@@ -690,14 +751,14 @@ textarea {
   width: 100%;
   background: none;
   border: none;
-  border-bottom: 1px solid rgb(168 213 154 / 28%);
+  border-bottom: 1px solid rgb(168 213 154 / 26%);
   color: var(--px-terminal-dim);
-  padding: 0.5rem 0.2rem;
+  padding: 0.3rem 0.2rem;
   letter-spacing: 0.16em;
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   text-align: left;
   cursor: pointer;
-  text-shadow: 0 1px 3px rgb(0 0 0 / 90%);
+  text-shadow: 0 1px 4px rgb(0 0 0 / 95%);
 }
 
 .action-button:hover:not(:disabled) {

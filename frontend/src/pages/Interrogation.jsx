@@ -6,6 +6,7 @@ import { Timer } from "../components/Timer";
 import { EvidencePanel } from "../components/EvidencePanel";
 import { EvidenceFolder } from "../components/evidence/EvidenceFolder";
 import { ActionBar } from "../components/ActionBar";
+import { DeskEvidenceStack } from "../components/DeskEvidenceStack";
 // Re-tuning the suspect's placement? Uncomment this import, the DEFAULT_TUNE
 // const, the `tune` state, and the two JSX lines marked TUNER below.
 // import { SuspectTuner } from "../components/SuspectTuner";
@@ -134,6 +135,8 @@ export function Interrogation({ session, onStatusChange }) {
         </button>
         {error && <p className="error-text">{error}</p>}
       </section>
+
+      <DeskEvidenceStack evidenceFound={evidenceFound} onOpen={setOpenEvidence} />
 
       <div className="hud-desk-sheet">
         <ActionBar active={activeAction} onSelect={handleAction} disabled={sending} />
