@@ -9,11 +9,13 @@ export function RoomStage({ stress = 0, children }) {
         alt=""
         aria-hidden="true"
       />
+      <div className="room-suspect-glow" aria-hidden="true" />
       <img
         className="room-suspect"
         src="/assets/character/suspect-portrait-source.png"
         alt="Adrian Vale"
       />
+      <div className="room-desk-occluder" aria-hidden="true" />
       <div className="room-scanlines" aria-hidden="true" />
       <div className="room-grain" aria-hidden="true" />
       <div className="room-vignette" aria-hidden="true" />

@@ -38,15 +38,55 @@ textarea {
   object-fit: cover;
 }
 
+/* The suspect sits BEHIND the desk: he is anchored so his lower body runs past
+   the desk's front edge (~58% of the plate), and .room-desk-occluder paints that
+   desk region back over him. Without this he reads as floating on the wall. */
 .room-suspect {
-  width: 34%;
+  width: 30%;
   height: auto;
   left: 50%;
-  top: 22%;
+  top: 16%;
+  bottom: auto;
   transform: translateX(-50%);
   object-fit: contain;
-  -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 40%, #000 55%, transparent 88%);
-  mask-image: radial-gradient(ellipse 60% 70% at 50% 40%, #000 55%, transparent 88%);
+  /* The source portrait has no alpha channel, so it is blended into the wall
+     rather than composited: multiply burns its dark surround into the plate,
+     and the soft mask erases the remaining rectangular edges. */
+  mix-blend-mode: multiply;
+  filter: brightness(1.34) contrast(1.05) saturate(0.92);
+  -webkit-mask-image: radial-gradient(ellipse 54% 62% at 50% 40%, #000 44%, rgb(0 0 0 / 30%) 72%, transparent 88%);
+  mask-image: radial-gradient(ellipse 54% 62% at 50% 40%, #000 44%, rgb(0 0 0 / 30%) 72%, transparent 88%);
+}
+
+/* Re-paints the desk half of the room plate on top of the suspect, so the desk
+   edge cuts him off instead of him hovering above it. */
+.room-desk-occluder {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/assets/environment/interrogation-room-plate.png");
+  background-size: cover;
+  background-position: center;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0 56%, #000 60% 100%);
+  mask-image: linear-gradient(to bottom, transparent 0 56%, #000 60% 100%);
+}
+
+/* Warm practical light pooling on the suspect, sold as lamp falloff. */
+.room-suspect-glow {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  width: 38%;
+  aspect-ratio: 1 / 1.05;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 50% 46% at 50% 40%,
+    rgb(201 138 69 / 20%),
+    rgb(201 138 69 / 6%) 55%,
+    transparent 78%
+  );
+  mix-blend-mode: screen;
 }
 
 .room-scanlines {
@@ -103,4 +143,545 @@ textarea {
   .room-grain {
     animation: none;
   }
+}
+
+.stress-gauge {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.stress-gauge-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--px-terminal-dim);
+}
+
+.stress-gauge-state {
+  color: var(--px-terminal);
+}
+
+.stress-track {
+  height: 12px;
+  border: 1px solid var(--px-hairline);
+  background: var(--px-surface);
+  overflow: hidden;
+}
+
+.stress-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--px-warning);
+  transform-origin: left center;
+  transform: scaleX(var(--stress-scale, 0));
+  transition: transform 0.35s ease;
+}
+
+.stress-value {
+  font-size: 0.7rem;
+  color: var(--px-terminal-dim);
+  text-align: right;
+}
+
+.timer {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.timer-label {
+  font-size: 0.7rem;
+  color: var(--px-terminal-dim);
+  letter-spacing: 0.08em;
+}
+
+.timer-value {
+  font-size: 1.1rem;
+}
+
+.timer-critical .timer-value {
+  color: var(--px-warning);
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--px-hairline);
+  background: rgb(10 9 6 / 78%);
+}
+
+.chat-empty {
+  margin: 0;
+  color: var(--px-terminal-dim);
+}
+
+.chat-entry {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.chat-role {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--px-terminal-dim);
+}
+
+.chat-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.chat-adrian .chat-text {
+  color: var(--px-paper);
+}
+
+.evidence-panel {
+  border: 1px solid var(--px-hairline);
+  padding: 0.75rem;
+  background: rgb(33 28 20 / 80%);
+}
+
+.evidence-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--px-terminal-dim);
+  font-weight: 400;
+}
+
+.evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.evidence-item {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--px-terminal-dim);
+  text-align: left;
+  padding: 0.15rem 0;
+  cursor: default;
+}
+
+.evidence-item.evidence-unlocked {
+  color: var(--px-terminal);
+  cursor: pointer;
+}
+
+.evidence-item.evidence-unlocked:hover {
+  color: var(--px-paper);
+}
+
+/* --- Start screen --- */
+
+.start-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgb(201 138 69 / 10%), transparent 60%),
+    var(--px-black);
+}
+
+.start-card {
+  width: min(380px, 100%);
+  border: 1px solid var(--px-hairline);
+  background: rgb(33 28 20 / 72%);
+  padding: 1.75rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.start-title {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.22em;
+  font-weight: 400;
+}
+
+.start-x {
+  color: var(--px-warning);
+}
+
+.start-sub {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--px-terminal-dim);
+}
+
+.start-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.start-form label {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: var(--px-terminal-dim);
+}
+
+.start-form input {
+  background: var(--px-black);
+  border: 1px solid var(--px-hairline);
+  color: var(--px-terminal);
+  padding: 0.6rem;
+  letter-spacing: 0.1em;
+}
+
+.start-form input:focus-visible {
+  outline: 1px solid var(--px-terminal);
+  outline-offset: 1px;
+}
+
+.start-form button {
+  background: var(--px-terminal);
+  color: var(--px-black);
+  border: none;
+  padding: 0.65rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.start-form button:disabled {
+  background: var(--px-terminal-dim);
+  cursor: wait;
+}
+
+.start-brief {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--px-terminal-dim);
+  line-height: 1.5;
+}
+
+/* --- Interrogation screen --- */
+
+.interrogation-shell {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.stage-hud {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to bottom, rgb(10 9 6 / 78%), transparent);
+}
+
+.stage-hud-bottom {
+  background: linear-gradient(to top, rgb(10 9 6 / 85%), transparent);
+}
+
+.stage-brand {
+  letter-spacing: 0.18em;
+  display: grid;
+}
+
+.stage-brand small {
+  font-size: 0.6rem;
+  color: var(--px-terminal-dim);
+  letter-spacing: 0.1em;
+}
+
+.stage-hud-bottom .stress-gauge {
+  flex: 1;
+  max-width: 320px;
+}
+
+.milestone-readout {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--px-terminal-dim);
+}
+
+.interrogation-body {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.interrogation-main {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.interrogation-main .chat-log {
+  height: 240px;
+}
+
+.panel-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: var(--px-terminal-dim);
+}
+
+.question-panel {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.question-panel textarea {
+  background: var(--px-surface);
+  border: 1px solid var(--px-hairline);
+  color: var(--px-terminal);
+  padding: 0.6rem;
+  min-height: 74px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.question-panel textarea:focus-visible {
+  outline: 1px solid var(--px-terminal);
+  outline-offset: 1px;
+}
+
+.question-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.char-count {
+  font-size: 0.65rem;
+  color: var(--px-terminal-dim);
+}
+
+.question-actions button {
+  background: var(--px-terminal);
+  color: var(--px-black);
+  border: none;
+  padding: 0.5rem 1.4rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.question-actions button:disabled {
+  background: var(--px-terminal-dim);
+  cursor: wait;
+}
+
+@media (max-width: 720px) {
+  .interrogation-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Evidence documents --- */
+
+.evidence-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(10 9 6 / 82%);
+  z-index: 20;
+}
+
+.evidence-folder {
+  width: min(520px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--px-paper);
+  color: #2a231a;
+  padding: 1.25rem;
+  border: 1px solid #8d7a57;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 55%);
+}
+
+.doc-head {
+  display: grid;
+  gap: 0.15rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #8d7a57;
+  position: relative;
+}
+
+.doc-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+}
+
+.doc-ref {
+  font-size: 0.7rem;
+  color: #6b5c41;
+}
+
+.doc-stamp {
+  position: absolute;
+  top: -0.2rem;
+  right: 0;
+  border: 2px solid var(--px-warning);
+  color: var(--px-warning);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  padding: 0.15rem 0.4rem;
+  transform: rotate(-6deg);
+  opacity: 0.85;
+}
+
+.doc-body {
+  padding-top: 0.75rem;
+}
+
+.doc-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.doc-row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dotted #a8956d;
+  font-size: 0.82rem;
+}
+
+.doc-row-flagged .doc-event {
+  color: var(--px-warning);
+  font-weight: 600;
+}
+
+.doc-time {
+  color: #6b5c41;
+}
+
+.doc-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.78rem;
+  color: #4a3f2d;
+  line-height: 1.5;
+}
+
+.doc-photo {
+  margin: 0;
+}
+
+.doc-photo img {
+  width: 100%;
+  display: block;
+  filter: grayscale(1) contrast(0.85) sepia(0.12);
+  border: 6px solid #efe3c6;
+  box-shadow: 0 6px 14px rgb(0 0 0 / 35%);
+}
+
+.doc-photo figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: #4a3f2d;
+}
+
+.doc-close {
+  margin-top: 1rem;
+  width: 100%;
+  background: #2a231a;
+  color: var(--px-paper);
+  border: none;
+  padding: 0.55rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+/* --- Confession screen --- */
+
+.confession-screen {
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.9rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgb(159 48 41 / 14%), transparent 62%),
+    var(--px-black);
+}
+
+.confession-headline {
+  margin: 0;
+  font-size: clamp(1.9rem, 7vw, 3.1rem);
+  letter-spacing: 0.3em;
+  color: var(--px-warning);
+  font-weight: 400;
+}
+
+.confession-sub {
+  margin: 0;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+}
+
+.confession-quote {
+  margin: 0.6rem 0;
+  max-width: 540px;
+  border-left: 2px solid var(--px-warning);
+  padding-left: 1rem;
+  text-align: left;
+  color: var(--px-paper);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.confession-summary {
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  width: min(420px, 100%);
+}
+
+.confession-summary-visible {
+  opacity: 1;
+}
+
+.confession-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--px-hairline);
+  padding-bottom: 0.3rem;
+}
+
+.confession-row dt {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--px-terminal-dim);
+}
+
+.confession-row dd {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.confession-meta {
+  margin: 0.4rem 0 0;
+  font-size: 0.68rem;
+  color: var(--px-terminal-dim);
+  letter-spacing: 0.1em;
 }
