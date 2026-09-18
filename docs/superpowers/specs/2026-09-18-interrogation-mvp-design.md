@@ -11,6 +11,8 @@
 - **Case content:** The example case from guide section 9 (Adrian Vale murders Daniel Mercer in the Archive Room) is the real content, encoded in `case_data.py`.
 - **Persistence:** In-memory session dict only. No database. Sessions lost on server restart — acceptable for a single-day event.
 - **Scope:** One vertical slice covering start → question loop → stress/milestones → confession → winner determination. Visual polish (CRT effects, admin panel, sound) is a later pass, not blocking this spec.
+- **Build order:** UI-first. Build and style all frontend screens (Start, Interrogation, Confession) against a local mock API with realistic fake data, then build the backend, then swap the mock for real HTTP calls. This lets visual/UX iteration happen without waiting on backend or AI integration.
+- **Evidence documents:** The 5 remaining evidence docs (phone record, fingerprint report, witness statement, evidence folder, timeline) are built as React components styled with `assets/DESIGN_TOKENS.css`, populated from `case_data.py` content — not generated raster images — per `ASSET_MANIFEST.md`'s explicit recommendation to keep text legible and data editable. No image-generation tooling (Adobe or otherwise) is needed for this MVP since the manifest's raster assets (room plate, suspect portrait, 3 evidence photos) are already delivered.
 
 ## Architecture
 
