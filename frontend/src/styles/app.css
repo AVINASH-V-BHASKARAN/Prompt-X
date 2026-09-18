@@ -1,0 +1,22 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--px-black);
+  color: var(--px-terminal);
+  font-family: var(--px-mono);
+  font-size: 14px;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.error-text {
+  color: var(--px-warning);
+}
