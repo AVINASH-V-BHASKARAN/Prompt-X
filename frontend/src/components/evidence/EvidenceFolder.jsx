@@ -32,7 +32,7 @@ function PhotoDoc({ photo }) {
   );
 }
 
-export function EvidenceFolder({ evidenceId, onClose }) {
+export function EvidenceFolder({ evidenceId, onClose, onPresent, presenting }) {
   useEffect(() => {
     const onKey = (event) => {
       if (event.key === "Escape") onClose();
@@ -64,9 +64,11 @@ export function EvidenceFolder({ evidenceId, onClose }) {
 
         {textContent ? <RecordDoc content={textContent} /> : <PhotoDoc photo={photoContent} />}
 
-        <button type="button" className="doc-close" onClick={onClose}>
-          CLOSE FILE
-        </button>
+        <footer className="evidence-actions">
+          <button type="button" className="evidence-inspect" autoFocus>INSPECT</button>
+          <button type="button" className="evidence-present" onClick={() => onPresent(evidenceId)} disabled={presenting}>{presenting ? "PRESENTING..." : "PRESENT TO SUSPECT"}</button>
+          <button type="button" className="doc-close" onClick={onClose}>CLOSE</button>
+        </footer>
       </article>
     </div>
   );

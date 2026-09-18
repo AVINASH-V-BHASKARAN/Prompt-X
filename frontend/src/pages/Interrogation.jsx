@@ -72,6 +72,21 @@ export function Interrogation({ session, onStatusChange }) {
     }
   };
 
+  const handlePresentEvidence = async (evidenceId) => {
+    if (sending) return;
+    const title = evidenceId.replace(/_/g, " ").toUpperCase();
+    setSending(true);
+    setError("");
+    setEntries((prev) => [...prev, { role: "player", text: `[PRESENTED EVIDENCE: ${title}]` }]);
+    try {
+      const result = await askQuestion(session.session_id, `I am presenting ${title}. Explain this evidence.`);
+      setEntries((prev) => [...prev, { role: "adrian", text: result.response }]);
+      setStress(result.stress); setMilestone(result.milestone); setEvidenceFound(result.evidence_found);
+      if (result.status !== "ACTIVE") onStatusChange({ ...session, ...result });
+      setOpenEvidence(null);
+    } catch (err) { setError(err.message); } finally { setSending(false); }
+  };
+
   return (
     <div className="interrogation-screen">
       {/* TUNER: swap for <RoomStage stress={stress} tune={tune} /> when re-tuning */}
@@ -204,7 +219,7 @@ export function Interrogation({ session, onStatusChange }) {
       </footer>
 
       {openEvidence && (
-        <EvidenceFolder evidenceId={openEvidence} onClose={() => setOpenEvidence(null)} />
+        <EvidenceFolder evidenceId={openEvidence} onClose={() => setOpenEvidence(null)} onPresent={handlePresentEvidence} presenting={sending} />
       )}
     </div>
   );

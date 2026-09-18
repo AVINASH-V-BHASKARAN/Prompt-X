@@ -627,60 +627,6 @@ textarea {
   }
 }
 
-/* --- Evidence stack prop on the desk --- */
-
-.desk-evidence {
-  position: absolute;
-  bottom: 4.5rem;
-  left: 3vw;
-  width: min(22vw, 260px);
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  z-index: 3;
-  display: grid;
-  justify-items: center;
-  gap: 0.35rem;
-  transition: transform 0.25s ease, filter 0.25s ease;
-}
-
-.desk-evidence:hover:not(:disabled),
-.desk-evidence:focus-visible:not(:disabled) {
-  transform: translateY(-4px) scale(1.02);
-  filter: brightness(1.18) drop-shadow(0 0 14px rgb(201 138 69 / 45%));
-  outline: none;
-}
-
-.desk-evidence:disabled {
-  cursor: default;
-  filter: brightness(0.5) saturate(0.4);
-}
-
-.desk-evidence-img {
-  width: 100%;
-  height: auto;
-  display: block;
-  /* The source render has an opaque black backdrop. A radial mask feathers the
-     square edge away, and the desk beneath is dark enough that the remaining
-     black reads as shadow under the folders. */
-  -webkit-mask-image: radial-gradient(ellipse 64% 62% at 50% 52%, #000 52%, transparent 88%);
-  mask-image: radial-gradient(ellipse 64% 62% at 50% 52%, #000 52%, transparent 88%);
-}
-
-.desk-evidence-count {
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  color: var(--px-terminal);
-  text-shadow: 0 1px 4px rgb(0 0 0 / 95%);
-}
-
-@media (max-width: 900px) {
-  .desk-evidence {
-    display: none;
-  }
-}
-
 /* --- Temporary suspect tuner --- */
 
 .tuner {
@@ -1045,6 +991,94 @@ textarea {
 .doc-forensics-match {
   color: var(--px-warning);
   font-weight: 600;
+}
+
+/* --- Desk evidence and interrogation selector --- */
+
+.desk-evidence {
+  position: absolute;
+  z-index: 7;
+  left: clamp(1.25rem, 4vw, 4.5rem);
+  bottom: clamp(2.2rem, 5vh, 4rem);
+  width: min(35rem, 46vw);
+  height: min(13rem, 38vh);
+  pointer-events: none;
+}
+
+.desk-case-folder,
+.desk-file {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.desk-case-folder {
+  width: 16rem;
+  height: 7.25rem;
+  left: .5rem;
+  bottom: .1rem;
+  overflow: hidden;
+  transform: rotate(-2deg) skewY(-2deg);
+}
+
+.desk-case-folder img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; filter: saturate(.82) contrast(.93); opacity: .94; }
+
+.desk-file {
+  width: 10rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--px-paper);
+  filter: drop-shadow(.5rem .85rem .45rem rgb(0 0 0 / 50%));
+  transition: transform 180ms ease-out, filter 180ms ease-out;
+}
+
+.desk-file:hover,
+.desk-file:focus-visible { filter: brightness(1.14) drop-shadow(.6rem 1rem .7rem rgb(0 0 0 / 68%)); outline: 1px solid var(--px-terminal); outline-offset: .25rem; z-index: 5; }
+.desk-file-0 { left: 10rem; bottom: .2rem; transform: rotate(5deg) skewY(-2deg); }
+.desk-file-1 { left: 15.2rem; bottom: 1.1rem; transform: rotate(-4deg) skewY(-2deg); }
+.desk-file-2 { left: 20.5rem; bottom: -.2rem; transform: rotate(4deg) skewY(-2deg); }
+.desk-file-3 { left: 25rem; bottom: 1.5rem; transform: rotate(-6deg) skewY(-2deg); }
+.desk-file-4 { left: 18rem; bottom: 3.3rem; transform: rotate(2deg) skewY(-2deg); }
+.desk-file-0:hover, .desk-file-0:focus-visible { transform: rotate(5deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-1:hover, .desk-file-1:focus-visible { transform: rotate(-4deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-2:hover, .desk-file-2:focus-visible { transform: rotate(4deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-3:hover, .desk-file-3:focus-visible { transform: rotate(-6deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-4:hover, .desk-file-4:focus-visible { transform: rotate(2deg) skewY(-2deg) translateY(-.65rem); }
+
+.desk-file-paper { min-height: 7rem; padding: .75rem; display: grid; align-content: space-between; background: #cdbb91; border: 1px solid #5d4a31; color: #2f261b; }
+.desk-file-paper i, .desk-file-paper em { font-size: .51rem; font-style: normal; letter-spacing: .1em; }
+.desk-file-paper strong { font-size: .72rem; line-height: 1.35; letter-spacing: .07em; }
+.desk-file-photo img { width: 100%; aspect-ratio: 1.38; object-fit: cover; display: block; border: .5rem solid #d8c8a4; outline: 1px solid #574630; filter: grayscale(.75) sepia(.28) contrast(.86); }
+.desk-file-label { display: block; margin-top: .28rem; font-size: .5rem; letter-spacing: .11em; text-shadow: 0 1px 3px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.hud-desk-sheet {
+  width: min(31vw, 29rem);
+  min-width: 20rem;
+  bottom: 4.6rem;
+  padding: .65rem 1.1rem .7rem;
+  border: 1px solid rgb(168 213 154 / 44%);
+  background: rgb(12 12 8 / 58%);
+  box-shadow: 0 .9rem 1.8rem rgb(0 0 0 / 34%);
+}
+.action-bar { gap: 0; }
+.action-button { min-height: 2.35rem; padding: .48rem .25rem; border-bottom-color: rgb(168 213 154 / 35%); font-size: .72rem; transition: color 150ms ease-out, background-color 150ms ease-out; }
+.action-button:hover:not(:disabled), .action-active { background: linear-gradient(90deg, rgb(168 213 154 / 13%), transparent 75%); color: #d1ebc8; }
+.action-caret { width: .85rem; color: var(--px-warning); }
+
+.evidence-overlay { background: rgb(8 7 4 / 88%); padding: 1.5rem; }
+.evidence-folder { position: relative; width: min(46rem, 100%); padding: 1.35rem 1.5rem; background: #d2c199; border-color: #766243; box-shadow: 0 2rem 5rem rgb(0 0 0 / 72%); }
+.evidence-folder::before { content: ""; position: absolute; inset: .45rem; border: 1px solid rgb(74 58 38 / 40%); pointer-events: none; }
+.evidence-actions { position: relative; display: grid; grid-template-columns: 1fr 1.8fr .8fr; gap: .45rem; margin-top: 1.25rem; }
+.evidence-actions button { min-height: 2.45rem; border: 1px solid #4e402c; background: transparent; color: #302719; cursor: pointer; letter-spacing: .1em; font-size: .65rem; }
+.evidence-actions button:hover, .evidence-actions button:focus-visible { background: #3a3021; color: #e4d4ae; outline: 1px solid var(--px-terminal); outline-offset: 2px; }
+.evidence-actions .evidence-present { background: #4a3027; color: #e8d8b2; border-color: #6b2922; }
+.evidence-actions .doc-close { margin: 0; width: auto; }
+
+@media (max-width: 900px) {
+  .desk-evidence { display: none; }
+  .hud-desk-sheet { min-width: 0; width: auto; }
 }
 
 @media (max-width: 420px) {
