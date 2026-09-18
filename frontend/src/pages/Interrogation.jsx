@@ -52,6 +52,37 @@ export function Interrogation({ session, onStatusChange }) {
     if (action === "ask") inputRef.current?.focus();
   };
 
+  // Arrow keys move through the action menu from anywhere on the screen, but
+  // never while the player is typing a question or a dialog is open.
+  useEffect(() => {
+    const order = ["ask", "accuse", "end"];
+
+    const onKeyDown = (event) => {
+      const isArrow = event.key === "ArrowUp" || event.key === "ArrowDown";
+      if (!isArrow && event.key !== "Enter") return;
+
+      const tag = document.activeElement?.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT") return;
+      if (openEvidence) return;
+
+      event.preventDefault();
+
+      if (isArrow) {
+        setActiveAction((current) => {
+          const index = order.indexOf(current);
+          const step = event.key === "ArrowDown" ? 1 : -1;
+          return order[(index + step + order.length) % order.length];
+        });
+        return;
+      }
+
+      if (activeAction === "ask") inputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [openEvidence, activeAction]);
+
   const handleSend = async () => {
     const trimmed = question.trim();
     if (!trimmed || sending) return;

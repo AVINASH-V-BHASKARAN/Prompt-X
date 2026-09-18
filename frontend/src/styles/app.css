@@ -754,8 +754,16 @@ textarea {
 }
 
 .action-caret {
-  width: 0.7rem;
+  width: 1rem;
+  font-size: 1.05rem;
+  line-height: 1;
   color: var(--px-warning);
+  text-shadow: 0 0 8px rgb(159 48 41 / 70%);
+}
+
+.action-button:focus-visible {
+  outline: 1px solid var(--px-terminal);
+  outline-offset: 2px;
 }
 
 .action-panel {
