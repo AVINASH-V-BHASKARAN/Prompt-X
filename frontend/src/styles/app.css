@@ -158,7 +158,8 @@ textarea {
 }
 
 .stress-gauge-state {
-  color: var(--px-terminal);
+  color: var(--stress-color, var(--px-terminal));
+  transition: color 0.35s ease;
 }
 
 .stress-track {
@@ -171,18 +172,40 @@ textarea {
 .stress-fill {
   height: 100%;
   width: 100%;
-  background: var(--px-warning);
+  background: var(--stress-color, var(--px-warning));
   transform-origin: left center;
   transform: scaleX(var(--stress-scale, 0));
-  transition: transform 0.35s ease;
+  transition: transform 0.35s ease, background-color 0.35s ease;
+}
+
+/* Above 95 the meter pulses — Adrian is about to break. */
+.stress-gauge-breaking .stress-fill {
+  animation: stress-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes stress-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stress-gauge-breaking .stress-fill {
+    animation: none;
+  }
 }
 
 .stress-value {
   font-size: 0.66rem;
-  color: var(--px-terminal);
+  color: var(--stress-color, var(--px-terminal));
   line-height: 1;
   align-self: center;
   font-variant-numeric: tabular-nums;
+  transition: color 0.35s ease;
 }
 
 .timer {
