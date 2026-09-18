@@ -627,6 +627,14 @@ textarea {
   }
 }
 
+/* Anchored top-right so it clears the desk props being tuned. */
+.tuner-evidence {
+  top: 1rem;
+  left: auto;
+  right: 1rem;
+  transform: none;
+}
+
 /* --- Temporary suspect tuner --- */
 
 .tuner {
@@ -998,8 +1006,10 @@ textarea {
 .desk-evidence {
   position: absolute;
   z-index: 7;
-  left: clamp(1.25rem, 4vw, 4.5rem);
-  bottom: clamp(2.2rem, 5vh, 4rem);
+  /* Tuned visually against the desk. EvidenceTuner (commented out in
+     Interrogation.jsx) can override these at runtime if re-tuning is needed. */
+  left: var(--evidence-left, 7rem);
+  bottom: var(--evidence-bottom, 0rem);
   width: min(35rem, 46vw);
   height: min(13rem, 38vh);
   pointer-events: none;
@@ -1012,15 +1022,27 @@ textarea {
 }
 
 .desk-case-folder {
-  width: 16rem;
-  height: 7.25rem;
+  width: var(--evidence-folder-w, 17rem);
+  height: var(--evidence-folder-h, 24rem);
   left: .5rem;
   bottom: .1rem;
-  overflow: hidden;
-  transform: rotate(-2deg) skewY(-2deg);
+  transform: rotate(var(--evidence-rotate, -7deg)) skewY(-2deg);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform .25s ease, filter .25s ease;
 }
 
-.desk-case-folder img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; filter: saturate(.82) contrast(.93); opacity: .94; }
+.desk-case-folder:hover,
+.desk-case-folder:focus-visible {
+  transform: rotate(var(--evidence-rotate, -7deg)) skewY(-2deg) translateY(-6px) scale(1.03);
+  filter: brightness(1.2) drop-shadow(0 0 16px rgb(201 138 69 / 55%));
+  outline: none;
+}
+
+
+.desk-case-folder img { width: 100%; height: 100%; display: block; object-fit: contain; object-position: bottom center; filter: saturate(.82) contrast(.93); opacity: .94; }
 
 .desk-file {
   width: 10rem;

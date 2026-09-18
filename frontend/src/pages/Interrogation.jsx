@@ -7,6 +7,9 @@ import { EvidencePanel } from "../components/EvidencePanel";
 import { EvidenceFolder } from "../components/evidence/EvidenceFolder";
 import { ActionBar } from "../components/ActionBar";
 import { DeskEvidenceStack } from "../components/DeskEvidenceStack";
+// Re-tuning the desk evidence? Uncomment this import, the evidenceTune state,
+// and the two JSX lines marked EVIDENCE TUNER below.
+// import { EvidenceTuner } from "../components/EvidenceTuner";
 // Re-tuning the suspect's placement? Uncomment this import, the DEFAULT_TUNE
 // const, the `tune` state, and the two JSX lines marked TUNER below.
 // import { SuspectTuner } from "../components/SuspectTuner";
@@ -28,6 +31,9 @@ export function Interrogation({ session, onStatusChange }) {
   const [secondsRemaining, setSecondsRemaining] = useState(ROUND_SECONDS);
   const [activeAction, setActiveAction] = useState("ask");
   // const [tune, setTune] = useState(DEFAULT_TUNE);   // TUNER
+  // EVIDENCE TUNER: const [evidenceTune, setEvidenceTune] = useState({
+  //   left: 7, bottom: 0, folderWidth: 17, folderHeight: 24, rotate: -7,
+  // });
   const inputRef = useRef(null);
 
   const lastReply = [...entries].reverse().find((entry) => entry.role === "adrian");
@@ -43,7 +49,6 @@ export function Interrogation({ session, onStatusChange }) {
   const handleAction = (action) => {
     setActiveAction(action);
     if (action === "ask") inputRef.current?.focus();
-    if (action === "evidence" && evidenceFound[0]) setOpenEvidence(evidenceFound[0]);
   };
 
   const handleSend = async () => {
@@ -151,7 +156,13 @@ export function Interrogation({ session, onStatusChange }) {
         {error && <p className="error-text">{error}</p>}
       </section>
 
-      <DeskEvidenceStack evidenceFound={evidenceFound} onOpen={setOpenEvidence} />
+      {/* EVIDENCE TUNER: add tune={evidenceTune} when re-tuning */}
+      <DeskEvidenceStack
+        evidenceFound={evidenceFound}
+        onOpen={setOpenEvidence}
+        onOpenAll={() => handleAction("evidence")}
+      />
+      {/* EVIDENCE TUNER: <EvidenceTuner values={evidenceTune} onChange={setEvidenceTune} /> */}
 
       <div className="hud-desk-sheet">
         <ActionBar active={activeAction} onSelect={handleAction} disabled={sending} />
