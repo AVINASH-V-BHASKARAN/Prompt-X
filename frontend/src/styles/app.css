@@ -1,0 +1,1226 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--px-black);
+  color: var(--px-terminal);
+  font-family: var(--px-mono);
+  font-size: 14px;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.error-text {
+  color: var(--px-warning);
+}
+
+/* Full-viewport stage: the room fills the screen and every HUD panel floats
+   over it, matching the reference composition. */
+.room-stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--px-black);
+  z-index: 0;
+}
+
+.room-plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+/* The suspect is seated AT the desk. Sized against the stage so he tracks the
+   room plate as the viewport changes; the occluder repaints the desk over him. */
+.room-suspect {
+  position: absolute;
+  /* Tuned visually against the room plate. The var() fallbacks are the live
+     values; SuspectTuner (commented out in Interrogation.jsx) can override
+     them at runtime if this ever needs re-tuning. */
+  width: var(--suspect-width, 23vw);
+  height: auto;
+  left: var(--suspect-left, 50%);
+  top: auto;
+  bottom: var(--suspect-bottom, 20%);
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 2;
+  filter: brightness(var(--suspect-brightness, 1.01)) contrast(1.1) saturate(0.85);
+}
+
+/* The suspect renders in front of the desk, so nothing repaints over him.
+   Kept as a no-op hook in case the seated-behind composite is revisited. */
+.room-desk-occluder {
+  display: none;
+}
+
+/* Warm practical light pooling on the suspect, sold as lamp falloff. */
+.room-suspect-glow {
+  position: absolute;
+  left: 50%;
+  top: 12%;
+  width: 52%;
+  aspect-ratio: 1 / 0.9;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 48% 50% at 50% 42%,
+    rgb(201 138 69 / 16%),
+    rgb(201 138 69 / 5%) 58%,
+    transparent 80%
+  );
+  mix-blend-mode: screen;
+}
+
+.room-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 22%) 0px,
+    rgb(0 0 0 / 22%) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: calc(0.45 + var(--stage-intensity) * 0.35);
+}
+
+.room-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: calc(0.06 + var(--stage-intensity) * 0.14);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  animation: grain-shift 1.2s steps(2) infinite;
+}
+
+@keyframes grain-shift {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-2%, 1%);
+  }
+  100% {
+    transform: translate(1%, -2%);
+  }
+}
+
+.room-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 42%, rgb(0 0 0 / 82%) 100%);
+}
+
+.room-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-grain {
+    animation: none;
+  }
+}
+
+.stress-gauge {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.6rem;
+  width: 100%;
+}
+
+.stress-gauge-head {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  color: var(--px-terminal-dim);
+}
+
+.stress-gauge-state {
+  color: var(--stress-color, var(--px-terminal));
+  transition: color 0.35s ease;
+}
+
+.stress-track {
+  height: 10px;
+  border: 1px solid var(--px-hairline);
+  background: rgb(10 9 6 / 70%);
+  overflow: hidden;
+}
+
+.stress-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--stress-color, var(--px-warning));
+  transform-origin: left center;
+  transform: scaleX(var(--stress-scale, 0));
+  transition: transform 0.35s ease, background-color 0.35s ease;
+}
+
+/* Above 95 the meter pulses — Adrian is about to break. */
+.stress-gauge-breaking .stress-fill {
+  animation: stress-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes stress-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stress-gauge-breaking .stress-fill {
+    animation: none;
+  }
+}
+
+.stress-value {
+  font-size: 0.66rem;
+  color: var(--stress-color, var(--px-terminal));
+  line-height: 1;
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.35s ease;
+}
+
+.timer {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.timer-label {
+  font-size: 0.7rem;
+  color: var(--px-terminal-dim);
+  letter-spacing: 0.08em;
+}
+
+.timer-value {
+  font-size: 1.1rem;
+}
+
+.timer-critical .timer-value {
+  color: var(--px-warning);
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--px-hairline);
+  background: rgb(10 9 6 / 78%);
+}
+
+.chat-empty {
+  margin: 0;
+  color: var(--px-terminal-dim);
+}
+
+.chat-entry {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.chat-role {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--px-terminal-dim);
+}
+
+.chat-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.chat-adrian .chat-text {
+  color: var(--px-paper);
+}
+
+.evidence-panel {
+  border: 1px solid var(--px-hairline);
+  padding: 0.75rem;
+  background: rgb(33 28 20 / 80%);
+}
+
+.evidence-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--px-terminal-dim);
+  font-weight: 400;
+}
+
+.evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.evidence-item {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--px-terminal-dim);
+  text-align: left;
+  padding: 0.15rem 0;
+  cursor: default;
+}
+
+.evidence-item.evidence-unlocked {
+  color: var(--px-terminal);
+  cursor: pointer;
+}
+
+.evidence-item.evidence-unlocked:hover {
+  color: var(--px-paper);
+}
+
+/* --- Start screen --- */
+
+.start-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgb(201 138 69 / 10%), transparent 60%),
+    var(--px-black);
+}
+
+.start-card {
+  width: min(380px, 100%);
+  border: 1px solid var(--px-hairline);
+  background: rgb(33 28 20 / 72%);
+  padding: 1.75rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.start-title {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.22em;
+  font-weight: 400;
+}
+
+.start-x {
+  color: var(--px-warning);
+}
+
+.start-sub {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--px-terminal-dim);
+}
+
+.start-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.start-form label {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: var(--px-terminal-dim);
+}
+
+.start-form input {
+  background: var(--px-black);
+  border: 1px solid var(--px-hairline);
+  color: var(--px-terminal);
+  padding: 0.6rem;
+  letter-spacing: 0.1em;
+}
+
+.start-form input:focus-visible {
+  outline: 1px solid var(--px-terminal);
+  outline-offset: 1px;
+}
+
+.start-form button {
+  background: var(--px-terminal);
+  color: var(--px-black);
+  border: none;
+  padding: 0.65rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+.start-form button:disabled {
+  background: var(--px-terminal-dim);
+  cursor: wait;
+}
+
+.start-brief {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--px-terminal-dim);
+  line-height: 1.5;
+}
+
+/* --- Interrogation screen: HUD floating over the full-screen room --- */
+
+.interrogation-screen {
+  position: relative;
+  min-height: 100vh;
+  z-index: 1;
+}
+
+.panel-title {
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  color: var(--px-terminal);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--px-hairline);
+}
+
+.hud-panel {
+  position: absolute;
+  background: rgb(10 9 6 / 88%);
+  border: 1px solid var(--px-terminal-dim);
+  padding: 0.85rem;
+  backdrop-filter: blur(2px);
+  z-index: 3;
+}
+
+/* Top bar: brand, stress meter, tagline */
+
+.hud-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 520px) 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  z-index: 3;
+}
+
+.hud-brand {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.hud-brand-name {
+  font-size: 1.5rem;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hud-brand small {
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--px-terminal-dim);
+}
+
+.hud-stress {
+  border: 1px solid var(--px-terminal-dim);
+  background: rgb(10 9 6 / 82%);
+  padding: 0.5rem 0.8rem;
+}
+
+.hud-tagline {
+  justify-self: end;
+  text-align: right;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
+  color: var(--px-terminal-dim);
+}
+
+/* Suspect response, top-left */
+
+.hud-response {
+  top: 6.5rem;
+  left: 1.5rem;
+  width: min(30vw, 380px);
+}
+
+.hud-response-body {
+  max-height: 32vh;
+  overflow-y: auto;
+  line-height: 1.6;
+  color: var(--px-terminal);
+}
+
+.hud-response-body p {
+  margin: 0;
+}
+
+.hud-thinking {
+  color: var(--px-terminal-dim);
+  letter-spacing: 0.3em;
+}
+
+/* Question input, top-right */
+
+.hud-input {
+  top: 6.5rem;
+  right: 1.5rem;
+  width: min(30vw, 380px);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.hud-input textarea {
+  background: rgb(33 28 20 / 85%);
+  border: 1px solid var(--px-hairline);
+  color: var(--px-terminal);
+  padding: 0.6rem;
+  min-height: 70px;
+  resize: vertical;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.hud-input textarea:focus-visible {
+  outline: 1px solid var(--px-terminal);
+  outline-offset: 1px;
+}
+
+.hud-send {
+  background: var(--px-terminal);
+  color: var(--px-black);
+  border: none;
+  padding: 0.55rem;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  width: 100%;
+}
+
+.hud-send:disabled {
+  background: var(--px-terminal-dim);
+  cursor: wait;
+}
+
+/* Action menu, rendered as a paper sheet lying on the desk */
+
+/* Sits low on the desk surface so it never covers the suspect. The scrim is a
+   soft vertical fade rather than a hard box, to read as light on the desk. */
+.hud-desk-sheet {
+  position: absolute;
+  bottom: 3.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(34vw, 340px);
+  z-index: 3;
+  padding: 0.5rem 0.9rem;
+  background: linear-gradient(
+    to bottom,
+    rgb(10 9 6 / 0%),
+    rgb(10 9 6 / 72%) 22%,
+    rgb(10 9 6 / 78%)
+  );
+}
+
+/* Evidence / accuse / end panels sit above the sheet, centered */
+
+/* Anchored bottom-right so they clear both the suspect and the action menu. */
+.hud-evidence,
+.hud-action-panel {
+  bottom: 3.75rem;
+  right: 1.5rem;
+  width: min(26vw, 300px);
+  display: grid;
+  gap: 0.5rem;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.hud-evidence .evidence-panel {
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+/* Bottom status bar */
+
+.hud-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--px-hairline);
+  background: linear-gradient(to top, rgb(10 9 6 / 94%), transparent);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  z-index: 3;
+}
+
+.hud-footer-brand small {
+  color: var(--px-terminal-dim);
+  margin-left: 0.4rem;
+}
+
+.hud-footer-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  color: var(--px-terminal-dim);
+  flex-wrap: wrap;
+}
+
+.hud-footer-stats b {
+  color: var(--px-terminal);
+  margin-left: 0.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-critical-inline {
+  color: var(--px-warning) !important;
+}
+
+.hud-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--px-terminal-dim);
+  display: inline-block;
+}
+
+@media (max-width: 900px) {
+  .hud-top {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .hud-tagline {
+    display: none;
+  }
+
+  .hud-response,
+  .hud-input {
+    position: static;
+    width: auto;
+    margin: 0.75rem 1rem;
+  }
+
+  .hud-response {
+    margin-top: 9rem;
+  }
+
+  .hud-desk-sheet,
+  .hud-evidence,
+  .hud-action-panel {
+    position: static;
+    transform: none;
+    width: auto;
+    margin: 0.75rem 1rem 6rem;
+  }
+}
+
+/* Anchored top-right so it clears the desk props being tuned. */
+.tuner-evidence {
+  top: 1rem;
+  left: auto;
+  right: 1rem;
+  transform: none;
+}
+
+/* --- Temporary suspect tuner --- */
+
+.tuner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(90vw, 460px);
+  border: 1px solid var(--px-warning);
+  background: rgb(10 9 6 / 96%);
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.45rem;
+  z-index: 40;
+}
+
+.tuner-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: var(--px-warning);
+}
+
+.tuner-row {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr 3.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--px-terminal-dim);
+}
+
+.tuner-row output {
+  text-align: right;
+  color: var(--px-terminal);
+  font-variant-numeric: tabular-nums;
+}
+
+.tuner-output {
+  margin: 0.3rem 0 0;
+  padding: 0.6rem;
+  background: var(--px-black);
+  border: 1px solid var(--px-hairline);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--px-paper);
+  overflow-x: auto;
+  white-space: pre;
+  user-select: all;
+}
+
+.tuner-hint {
+  margin: 0;
+  font-size: 0.65rem;
+  color: var(--px-terminal-dim);
+}
+
+/* --- Action bar --- */
+
+.action-bar {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgb(168 213 154 / 26%);
+  color: var(--px-terminal-dim);
+  padding: 0.3rem 0.2rem;
+  letter-spacing: 0.16em;
+  font-size: 0.74rem;
+  text-align: left;
+  cursor: pointer;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 95%);
+}
+
+.action-button:hover:not(:disabled) {
+  color: var(--px-terminal);
+  border-bottom-color: var(--px-terminal);
+}
+
+.action-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-active {
+  color: var(--px-terminal);
+  border-bottom-color: var(--px-terminal);
+}
+
+.action-caret {
+  width: 1rem;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--px-warning);
+  text-shadow: 0 0 8px rgb(159 48 41 / 70%);
+}
+
+.action-button:focus-visible {
+  outline: 1px solid var(--px-terminal);
+  outline-offset: 2px;
+}
+
+.action-panel {
+  border: 1px solid var(--px-hairline);
+  background: rgb(33 28 20 / 82%);
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.action-panel-warning {
+  border-color: var(--px-warning);
+}
+
+.action-panel-body {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--px-paper);
+}
+
+.action-panel-note {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--px-terminal-dim);
+}
+
+.action-panel button {
+  background: none;
+  border: 1px solid var(--px-hairline);
+  color: var(--px-terminal);
+  padding: 0.45rem 0.9rem;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.action-panel button:hover {
+  background: rgb(168 213 154 / 10%);
+}
+
+.action-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.action-danger {
+  border-color: var(--px-warning) !important;
+  color: var(--px-warning) !important;
+}
+
+.action-danger:hover {
+  background: rgb(159 48 41 / 14%) !important;
+}
+
+/* --- Evidence documents --- */
+
+.evidence-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(10 9 6 / 82%);
+  z-index: 20;
+}
+
+.evidence-folder {
+  width: min(520px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--px-paper);
+  color: #2a231a;
+  padding: 1.25rem;
+  border: 1px solid #8d7a57;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 55%);
+}
+
+.doc-head {
+  display: grid;
+  gap: 0.15rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #8d7a57;
+  position: relative;
+}
+
+.doc-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+}
+
+.doc-ref {
+  font-size: 0.7rem;
+  color: #6b5c41;
+}
+
+.doc-stamp {
+  position: absolute;
+  top: -0.2rem;
+  right: 0;
+  border: 2px solid var(--px-warning);
+  color: var(--px-warning);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  padding: 0.15rem 0.4rem;
+  transform: rotate(-6deg);
+  opacity: 0.85;
+}
+
+.doc-body {
+  padding-top: 0.75rem;
+}
+
+.doc-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.doc-row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dotted #a8956d;
+  font-size: 0.82rem;
+}
+
+.doc-row-flagged .doc-event {
+  color: var(--px-warning);
+  font-weight: 600;
+}
+
+.doc-time {
+  color: #6b5c41;
+}
+
+.doc-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.78rem;
+  color: #4a3f2d;
+  line-height: 1.5;
+}
+
+.doc-photo {
+  margin: 0;
+}
+
+.doc-photo img {
+  width: 100%;
+  display: block;
+  filter: grayscale(1) contrast(0.85) sepia(0.12);
+  border: 6px solid #efe3c6;
+  box-shadow: 0 6px 14px rgb(0 0 0 / 35%);
+}
+
+.doc-photo figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: #4a3f2d;
+}
+
+.doc-close {
+  margin-top: 1rem;
+  width: 100%;
+  background: #2a231a;
+  color: var(--px-paper);
+  border: none;
+  padding: 0.55rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.doc-subhead {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: #6b5c41;
+  border-bottom: 1px solid #a8956d;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.6rem;
+}
+
+.doc-statement-block,
+.doc-forensics {
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed #a8956d;
+}
+
+.doc-witness {
+  margin: 0 0 0.5rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  color: #4a3f2d;
+  font-weight: 600;
+}
+
+.doc-statement {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.doc-signature {
+  height: 34px;
+  margin: 0.8rem 0 0.2rem;
+  background:
+    linear-gradient(
+      100deg,
+      transparent 0 8%,
+      #2a231a 8% 9%,
+      transparent 9% 14%,
+      #2a231a 14% 15%,
+      transparent 15% 30%,
+      #2a231a 30% 31%,
+      transparent 31% 100%
+    ),
+    radial-gradient(ellipse 34% 40% at 22% 60%, transparent 46%, #2a231a 47%, transparent 52%);
+  opacity: 0.7;
+}
+
+.doc-forensics-grid {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.doc-fingerprint {
+  width: 100%;
+  height: auto;
+}
+
+.doc-forensics-rows {
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.doc-forensics-rows > div {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.5rem;
+  border-bottom: 1px dotted #a8956d;
+  padding-bottom: 0.25rem;
+}
+
+.doc-forensics-rows dt {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: #6b5c41;
+}
+
+.doc-forensics-rows dd {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.doc-forensics-match {
+  color: var(--px-warning);
+  font-weight: 600;
+}
+
+/* --- Desk evidence and interrogation selector --- */
+
+.desk-evidence {
+  position: absolute;
+  z-index: 7;
+  /* Tuned visually against the desk. EvidenceTuner (commented out in
+     Interrogation.jsx) can override these at runtime if re-tuning is needed. */
+  left: var(--evidence-left, 7rem);
+  bottom: var(--evidence-bottom, 0rem);
+  width: min(35rem, 46vw);
+  height: min(13rem, 38vh);
+  pointer-events: none;
+}
+
+.desk-case-folder,
+.desk-file {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.desk-case-folder {
+  width: var(--evidence-folder-w, 17rem);
+  height: var(--evidence-folder-h, 24rem);
+  left: .5rem;
+  bottom: .1rem;
+  transform: rotate(var(--evidence-rotate, -7deg)) skewY(-2deg);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform .25s ease, filter .25s ease;
+}
+
+.desk-case-folder:hover,
+.desk-case-folder:focus-visible {
+  transform: rotate(var(--evidence-rotate, -7deg)) skewY(-2deg) translateY(-6px) scale(1.03);
+  filter: brightness(1.2) drop-shadow(0 0 16px rgb(201 138 69 / 55%));
+  outline: none;
+}
+
+
+.desk-case-folder img { width: 100%; height: 100%; display: block; object-fit: contain; object-position: bottom center; filter: saturate(.82) contrast(.93); opacity: .94; }
+
+.desk-file {
+  width: 10rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--px-paper);
+  filter: drop-shadow(.5rem .85rem .45rem rgb(0 0 0 / 50%));
+  transition: transform 180ms ease-out, filter 180ms ease-out;
+}
+
+.desk-file:hover,
+.desk-file:focus-visible { filter: brightness(1.14) drop-shadow(.6rem 1rem .7rem rgb(0 0 0 / 68%)); outline: 1px solid var(--px-terminal); outline-offset: .25rem; z-index: 5; }
+.desk-file-0 { left: 10rem; bottom: .2rem; transform: rotate(5deg) skewY(-2deg); }
+.desk-file-1 { left: 15.2rem; bottom: 1.1rem; transform: rotate(-4deg) skewY(-2deg); }
+.desk-file-2 { left: 20.5rem; bottom: -.2rem; transform: rotate(4deg) skewY(-2deg); }
+.desk-file-3 { left: 25rem; bottom: 1.5rem; transform: rotate(-6deg) skewY(-2deg); }
+.desk-file-4 { left: 18rem; bottom: 3.3rem; transform: rotate(2deg) skewY(-2deg); }
+.desk-file-0:hover, .desk-file-0:focus-visible { transform: rotate(5deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-1:hover, .desk-file-1:focus-visible { transform: rotate(-4deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-2:hover, .desk-file-2:focus-visible { transform: rotate(4deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-3:hover, .desk-file-3:focus-visible { transform: rotate(-6deg) skewY(-2deg) translateY(-.65rem); }
+.desk-file-4:hover, .desk-file-4:focus-visible { transform: rotate(2deg) skewY(-2deg) translateY(-.65rem); }
+
+.desk-file-paper { min-height: 7rem; padding: .75rem; display: grid; align-content: space-between; background: #cdbb91; border: 1px solid #5d4a31; color: #2f261b; }
+.desk-file-paper i, .desk-file-paper em { font-size: .51rem; font-style: normal; letter-spacing: .1em; }
+.desk-file-paper strong { font-size: .72rem; line-height: 1.35; letter-spacing: .07em; }
+.desk-file-photo img { width: 100%; aspect-ratio: 1.38; object-fit: cover; display: block; border: .5rem solid #d8c8a4; outline: 1px solid #574630; filter: grayscale(.75) sepia(.28) contrast(.86); }
+.desk-file-label { display: block; margin-top: .28rem; font-size: .5rem; letter-spacing: .11em; text-shadow: 0 1px 3px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.hud-desk-sheet {
+  width: min(31vw, 29rem);
+  min-width: 20rem;
+  bottom: 4.6rem;
+  padding: .65rem 1.1rem .7rem;
+  border: 1px solid rgb(168 213 154 / 44%);
+  background: rgb(12 12 8 / 58%);
+  box-shadow: 0 .9rem 1.8rem rgb(0 0 0 / 34%);
+}
+.action-bar { gap: 0; }
+.action-button { min-height: 2.35rem; padding: .48rem .25rem; border-bottom-color: rgb(168 213 154 / 35%); font-size: .72rem; transition: color 150ms ease-out, background-color 150ms ease-out; }
+.action-button:hover:not(:disabled), .action-active { background: linear-gradient(90deg, rgb(168 213 154 / 13%), transparent 75%); color: #d1ebc8; }
+.action-caret { width: .85rem; color: var(--px-warning); }
+
+.evidence-overlay { background: rgb(8 7 4 / 88%); padding: 1.5rem; }
+.evidence-folder { position: relative; width: min(46rem, 100%); padding: 1.35rem 1.5rem; background: #d2c199; border-color: #766243; box-shadow: 0 2rem 5rem rgb(0 0 0 / 72%); }
+.evidence-folder::before { content: ""; position: absolute; inset: .45rem; border: 1px solid rgb(74 58 38 / 40%); pointer-events: none; }
+.evidence-actions { position: relative; display: grid; grid-template-columns: 1fr 1.8fr .8fr; gap: .45rem; margin-top: 1.25rem; }
+.evidence-actions button { min-height: 2.45rem; border: 1px solid #4e402c; background: transparent; color: #302719; cursor: pointer; letter-spacing: .1em; font-size: .65rem; }
+.evidence-actions button:hover, .evidence-actions button:focus-visible { background: #3a3021; color: #e4d4ae; outline: 1px solid var(--px-terminal); outline-offset: 2px; }
+.evidence-actions .evidence-present { background: #4a3027; color: #e8d8b2; border-color: #6b2922; }
+.evidence-actions .doc-close { margin: 0; width: auto; }
+
+@media (max-width: 900px) {
+  .desk-evidence { display: none; }
+  .hud-desk-sheet { min-width: 0; width: auto; }
+}
+
+@media (max-width: 420px) {
+  .doc-forensics-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .doc-fingerprint {
+    width: 90px;
+  }
+}
+
+/* --- Confession screen --- */
+
+.confession-screen {
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.9rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgb(159 48 41 / 14%), transparent 62%),
+    var(--px-black);
+}
+
+.confession-headline {
+  margin: 0;
+  font-size: clamp(1.9rem, 7vw, 3.1rem);
+  letter-spacing: 0.3em;
+  color: var(--px-warning);
+  font-weight: 400;
+}
+
+.confession-sub {
+  margin: 0;
+  letter-spacing: 0.2em;
+  font-size: 0.8rem;
+}
+
+.confession-quote {
+  margin: 0.6rem 0;
+  max-width: 540px;
+  border-left: 2px solid var(--px-warning);
+  padding-left: 1rem;
+  text-align: left;
+  color: var(--px-paper);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.confession-summary {
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  width: min(420px, 100%);
+}
+
+.confession-summary-visible {
+  opacity: 1;
+}
+
+.confession-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--px-hairline);
+  padding-bottom: 0.3rem;
+}
+
+.confession-row dt {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--px-terminal-dim);
+}
+
+.confession-row dd {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.confession-meta {
+  margin: 0.4rem 0 0;
+  font-size: 0.68rem;
+  color: var(--px-terminal-dim);
+  letter-spacing: 0.1em;
+}
